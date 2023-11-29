@@ -225,8 +225,7 @@
   void writeCan(){
     if(buttonState){
       buttonsData = 128;
-    }
-    if(buttonState){
+    }else{
       buttonsData = 0;
     }
     byte sndStat = CAN.sendMsgBuf(0x02, 0, 1, buttonsData); //Revisar ID
