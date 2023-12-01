@@ -117,7 +117,7 @@
       return;  //La función termina su ejecución sin realizar nada si la iniciación de la tira LED falla.
     }
     int minRev = 5000;                                      // Valor mínimo de revoluciones
-    int maxRev = 10500;                                     // Valor máximo de revoluciones
+    int maxRev = 11500;                                     // Valor máximo de revoluciones
     int numLedsOn = map(rev, minRev, maxRev, 0, NUM_LEDS);  // El valor de RPM dentro del rango establecido por las 2 variables anteriores se interpola al número de LEDs de la tira a encender.
 
     if (rev == 0) {                                //Lógica opcional en caso de que se desee que los LEDs realicen algo cuando el coche tiene contacto pero el motor no está arrancado.
