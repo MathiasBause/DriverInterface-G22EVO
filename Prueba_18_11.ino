@@ -36,11 +36,17 @@
   NOTA: En la Wiki se puede encontrar la explicación detallada de la programación de la pantalla en: G22 EVO -> Salpicadero.
   */
   #define RPM_ID 0x51 //RPM
-  #define ECT_ID 0x52 //Temperatura del agua
+  #define ECT_IN_ID 0x52 //Temperatura entrada del radiador
   #define GEAR_ID 0x53 //Marcha
-  #define TPS_ID 0x54 
-  #define BPS_ID 0x55
+  #define TPS_ID 0x54 //Posición pedal acelerador
+  #define BPS_ID 0x55 //Presión de freno
   #define BVOLT_ID 0x56 //Voltaje de batería
+  #define LAMBDA_ID 0x57 //Lambda
+  #define LR_WS_ID 0x58 //Velocidad de rueda LR
+  #define RR_WS_ID 0x59 //Velocidad de rueda RR
+  #define LF_WS_ID 0x60 //Velocidad de rueda LF
+  #define RF_WS_ID 0x61 //Velocidad de rueda RF
+  #define ECT_OUT_ID 0x62 //Temperatura salida del radiador
 
 
   /*-------------DEFINICIÓN DE VARIABLES Y OBJETOS-------------*/
@@ -144,7 +150,7 @@
         }                                                                               // De esta forma se crea un parpadeo en azul de los LEDS cuando las RPM superan maxRev
       }
       FastLED.show(); //Se actualiza la tira LED para poder visualizar los cambios que se le han hecho desde la última vez que este mismo comando se ejecutó.
-      //delay(10);
+      delay(10);
     }
   }
 
@@ -189,13 +195,13 @@
     //Se crean las variables necesarias para almacenar los datos recibidos por CAN BUS
     unsigned char len = 0;                                              //Variable para almacenar la longitud de la trama de CAN BUS.
     unsigned char buf[8];                                               //Búfer para almacenar la trama recibida.
-    unsigned int rpm, ect, gear, bvolt;                                 //Variables para almacenar los distintos datos que componen la trama. 
+    unsigned int rpm, ectIn, ectOut, gear, bvolt, lambda, lrWs;                 //Variables para almacenar los distintos datos que componen la trama. 
 
     if (CAN_MSGAVAIL == CAN.checkReceive()) {                           //Se verifica si existe alguna trama recibida para leer. Una vez sucede esto...
       CAN.readMsgBuf(&len, buf);                                        //...se calcula la longitud de la trama y se almacena en el búfer.
-      if (buf[0] == 1) {                                                //Se revisa el primer byte del búfer, que corresponde a la ID, para ver si esta es 1, como debería ser en los mensajes dirigidos a la placa. 
+      if (buf[0] == 1) {                                                //Se revisa el primer byte del búfer, que corresponde a la ID del frame, como debería ser en los mensajes dirigidos a la placa. 
         
-        //Si la ID del CAN es la correcta, entonces se pueden leer, separar y retransimitir los datos de la trama.
+        //Si la ID del Frame es 1, se leen los siguientes datos: RPM, ECT_IN, .
         rpm = buf[1] * 256 + buf[2];                                    //Se extrae el dato de las rpm de los bytes correspondientes del búfer.                                    
         ledsVolante(rpm);                                               //Se pasa el dato de las rpm como parámetro a ledsVolante para que la tira LED funcione según las rpm.
         //Serial.print("RPM: ");                                          //En el puerto serie se imprime para verificar el valor de rpm.
@@ -203,10 +209,10 @@
         send_serial(RPM_ID, rpm);                                       //Se llama a la función send_serial() para enviar el dato de las rpm con su respectiva ID a la pantalla HMI.
         //Con la salvedad de que solo con las rpm se realiza algo con la tira LED, para los demás parámetros recibidos por CAN se repite el proceso anterior: Extraerlos del búfer, imprimirlos para comprobar en el puerto serie, y enviarlos a la pantalla HMI.
         //NOTA: De qué byte(s) del búfer se extre cada parámetro, tiene que ver con cómo se configuró la trama para su envío del lado de la ECU. El video de Raúl al respecto lo explica muy bien.
-        ect = buf[3] * 256 + buf[4];
-        //Serial.print("ECT: ");
-        //Serial.println(ect);
-        send_serial(ECT_ID, ect);
+        ectIn = buf[3] * 256 + buf[4];
+        //Serial.print("ECT_IN: ");
+        //Serial.println(ectIn);
+        send_serial(ECT_IN_ID, ectIn);
         gear = buf[5];
         //Serial.print("GEAR: ");
         //Serial.println(gear);
@@ -215,7 +221,24 @@
         //Serial.print("BVOLT: ");
         //Serial.println(bvolt);
         send_serial(BVOLT_ID, bvolt);
-        //Serial.println("Recibido");
+        //Serial.println("Recibido: 1");
+      }
+      if (buf[0] == 2) {                                                
+        
+        //Si la ID del frame es 2, se leen los siguientes datos: LAMBDA, LR_WHEEL_SPEED y ECT_OUT.
+        lambda = buf[1] * 256 + buf[2];                                                                  
+        //Serial.print("LAMBDA: ");                                        
+        //Serial.println(lambda);
+        send_serial(LAMBDA_ID, rpm);                                       
+        lrWs = buf[3] * 256 + buf[4];
+        //Serial.print("LR_WS: ");
+        //Serial.println(lrWs);
+        send_serial(LR_WS_ID, lrWs);
+        ectOut = buf[5];
+        //Serial.print("ECT_OUT: ");
+        //Serial.println(ectOut);
+        send_serial(ECT_OUT_ID, ectOut);
+        //Serial.println("Recibido: 2");
       }
     }
   }
